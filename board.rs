@@ -79,6 +79,24 @@ impl ChessBoard {
         }
     }
 
+    pub fn knight_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+        let mut dest_list = Vec::new();
+        dest_list.push((source.0 + 1, source.1 + 2));
+        dest_list.push((source.0 + 2, source.1 + 1));
+        dest_list.push((source.0 - 1, source.1 + 2));
+        dest_list.push((source.0 - 2, source.1 + 1));
+        dest_list.push((source.0 + 1, source.1 - 2));
+        dest_list.push((source.0 + 2, source.1 - 1));
+        dest_list.push((source.0 - 1, source.1 - 2));
+        dest_list.push((source.0 - 2, source.1 - 1));
+        for dest in dest_list {
+            if self.board[dest.0][dest.1] != (clear_piece_color(self.board[dest.0][dest.1]) | self.protagonist) {
+                move_vec.push((source, dest));
+            }
+        }
+        move_vec
+    }
 
     pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
         if clear_piece_color(self.board[source.0][source.1]) == KING {

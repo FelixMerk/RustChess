@@ -2,7 +2,31 @@ mod board;
 
 fn main() {
     //_test_make_unmake_simple();
-    _test_make_unmake_castle();
+    //_test_make_unmake_castle();
+    _knight_moves();
+}
+
+fn _knight_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.knight_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/5p2/2b5/4N3/2K5/5P2/8/8 w - - 0 1");
+    let moves2 = board3.knight_moves((3,4));
+    println!("{}", board3);
+    paint_moves(&mut board3, moves2);
+}
+
+fn paint_moves(board : &mut board::ChessBoard, moves : Vec<((usize, usize),(usize, usize))>) {
+    for amove in moves {
+        board.board[amove.1.0][amove.1.1] = 0b11111;
+    }
+    println!("{}", board);
 }
 
 fn _test_basic_boards() {
