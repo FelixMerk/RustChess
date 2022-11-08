@@ -1,12 +1,15 @@
 use std::fmt;
+
 use std::convert::TryFrom;
 
 pub struct ChessBoard {
-    board: [[u8; 8]; 8],
+    pub board: [[u8; 8]; 8],
+    opponent: u8,
+    protagonist: u8,
 }
 
 pub fn build_board(board: [[u8; 8]; 8]) -> ChessBoard {
-    ChessBoard{ board: board }
+    ChessBoard{ board: board , opponent: BLACK , protagonist: WHITE }
 }
 
 
@@ -74,6 +77,45 @@ impl ChessBoard {
                 break;
             }
         }
+    }
+
+
+    pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
+        if clear_piece_color(self.board[source.0][source.1]) == KING {
+            if source.1.abs_diff(dest.1) > 1 { // Castling
+                if source.1 > dest.1 { // Queenside
+                    self.board[source.0][dest.1 + 1] = self.board[source.0][0];
+                    self.board[source.0][0] = 0b0000;
+                } else { // Kingside
+                    self.board[source.0][dest.1 - 1] = self.board[source.0][7];
+                    self.board[source.0][7] = 0b0000;
+                }
+            }
+        }
+        self.board[dest.0][dest.1] = self.board[source.0][source.1];
+        self.board[source.0][source.1] = 0b0000;
+    }
+
+    pub fn unmake(&mut self, source: (usize, usize), dest: (usize, usize), captured_piece: u8) {
+        if clear_piece_color(self.board[dest.0][dest.1]) == KING {
+            if source.1.abs_diff(dest.1) > 1 { // UnCastling
+                if source.1 > dest.1 { // Queenside
+                    self.board[source.0][0] = self.board[source.0][dest.1 + 1];
+                    self.board[source.0][dest.1 + 1] = 0b0000;
+                } else { // Kingside
+                    self.board[source.0][7] = self.board[source.0][dest.1 - 1];
+                    self.board[source.0][dest.1 - 1] = 0b0000;
+                }
+            }
+        }
+
+        self.board[source.0][source.1] = self.board[dest.0][dest.1];
+        self.board[dest.0][dest.1] = captured_piece;
+    }
+
+    pub fn unmake_ep(&mut self, source: (usize, usize), dest: (usize, usize), captured_piece: u8, ep: (usize, usize)) {
+        self.board[ep.0][ep.1] = PAWN | self.opponent;
+        self.unmake(source, dest, captured_piece);
     }
 }
 
