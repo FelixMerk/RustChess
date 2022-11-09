@@ -3,7 +3,68 @@ mod board;
 fn main() {
     //_test_make_unmake_simple();
     //_test_make_unmake_castle();
+    _king_moves();
     _knight_moves();
+}
+
+fn _king_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.king_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/r7/3P4/2K5/8/8/8/6B1 w - - 0 1");
+    let moves2 = board3.king_moves((3,2));
+    paint_moves(&mut board3, moves2);
+}
+
+fn _queen_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.queen_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/r7/3P4/2Q5/8/8/8/6B1 w - - 0 1");
+    let moves2 = board3.queen_moves((3,2));
+    paint_moves(&mut board3, moves2);
+}
+
+fn _bishop_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.bishop_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/r7/3P4/2B5/8/8/8/6B1 w - - 0 1");
+    let moves2 = board3.bishop_moves((3,2));
+    paint_moves(&mut board3, moves2);
+}
+
+fn _rook_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.rook_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/3b4/8/8/3R2Pb/3p4/8/8 w - - 0 1");
+    let moves2 = board3.rook_moves((4,3));
+    paint_moves(&mut board3, moves2);
 }
 
 fn _knight_moves() {
@@ -20,6 +81,12 @@ fn _knight_moves() {
     let moves2 = board3.knight_moves((3,4));
     println!("{}", board3);
     paint_moves(&mut board3, moves2);
+
+    board3.from_fen("8/8/8/8/8/8/8/8 w KQkq - 0 1");
+    let moves3 = board3.knight_moves((0,0));
+    let moves4 = board3.knight_moves((1,0));
+    let moves4 = board3.knight_moves((0,1));
+    paint_moves(&mut board3, moves3);
 }
 
 fn paint_moves(board : &mut board::ChessBoard, moves : Vec<((usize, usize),(usize, usize))>) {

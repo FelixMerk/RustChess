@@ -82,14 +82,34 @@ impl ChessBoard {
     pub fn knight_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
         let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
         let mut dest_list = Vec::new();
-        dest_list.push((source.0 + 1, source.1 + 2));
-        dest_list.push((source.0 + 2, source.1 + 1));
-        dest_list.push((source.0 - 1, source.1 + 2));
-        dest_list.push((source.0 - 2, source.1 + 1));
-        dest_list.push((source.0 + 1, source.1 - 2));
-        dest_list.push((source.0 + 2, source.1 - 1));
-        dest_list.push((source.0 - 1, source.1 - 2));
-        dest_list.push((source.0 - 2, source.1 - 1));
+
+        let mut rank = source.0;
+        let mut file = source.1;
+
+        if rank <= 6 && file <= 5 {
+            dest_list.push((rank + 1, file + 2));
+        }
+        if rank <= 5 && file <= 6 {
+            dest_list.push((rank + 2, file + 1));
+        }
+        if rank >= 1 && file <= 5 {
+            dest_list.push((rank - 1, file + 2));
+        }
+        if rank >= 2 && file <= 5 {
+            dest_list.push((rank - 2, file + 1));
+        }
+        if rank <= 6 && file >= 2 {
+            dest_list.push((rank + 1, file - 2));
+        }
+        if rank <= 5 && file >= 1 {
+            dest_list.push((rank + 2, file - 1));
+        }
+        if rank >= 1 && file >= 2 {
+            dest_list.push((rank - 1, file - 2));
+        }
+        if rank >= 2 && file >= 1 {
+            dest_list.push((rank - 2, file - 1));
+        }
         for dest in dest_list {
             if self.board[dest.0][dest.1] != (clear_piece_color(self.board[dest.0][dest.1]) | self.protagonist) {
                 move_vec.push((source, dest));
@@ -97,6 +117,69 @@ impl ChessBoard {
         }
         move_vec
     }
+
+    fn move_in_dir(& self, source: (usize, usize), move_vec : &mut Vec<((usize, usize),(usize, usize))>, lat_step : i8, hor_step : i8) {
+        let mut rank = source.0;
+        let mut file = source.1;
+        while (hor_step != 1 || rank < 7) && (hor_step != -1 || rank > 0) && (lat_step != 1 || file < 7) && (lat_step != -1 || file > 0) {
+            rank = step_usize(rank, hor_step);
+            file = step_usize(file, lat_step);
+            if self.board[rank][file] != 0b0000 {
+                if self.protagonist == (self.board[rank][file] & WHITE) { // hit our piece
+                    break;
+                } else { // enemy piece
+                    move_vec.push((source, (rank, file)));
+                    break;
+                }
+            }
+            move_vec.push((source, (rank, file)));
+        }
+    }
+
+    pub fn rook_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+        self.move_in_dir(source, &mut move_vec, 1, 0);
+        self.move_in_dir(source, &mut move_vec, 0, 1);
+        self.move_in_dir(source, &mut move_vec, -1, 0);
+        self.move_in_dir(source, &mut move_vec, 0, -1);
+        move_vec
+    }
+
+    pub fn bishop_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+        self.move_in_dir(source, &mut move_vec, 1, 1);
+        self.move_in_dir(source, &mut move_vec, -1, 1);
+        self.move_in_dir(source, &mut move_vec, 1, -1);
+        self.move_in_dir(source, &mut move_vec, -1, -1);
+        move_vec
+    }
+
+    pub fn queen_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = self.rook_moves(source);
+        move_vec.append(&mut self.bishop_moves(source));
+        move_vec
+    }
+
+    pub fn king_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+        let mut dest_list = Vec::new();
+        add_dest_if_on_board(source, &mut dest_list, 1, 1);
+        add_dest_if_on_board(source, &mut dest_list, 1, -1);
+        add_dest_if_on_board(source, &mut dest_list, 1, 0);
+        add_dest_if_on_board(source, &mut dest_list, -1, 1);
+        add_dest_if_on_board(source, &mut dest_list, -1, -1);
+        add_dest_if_on_board(source, &mut dest_list, -1, 0);
+        add_dest_if_on_board(source, &mut dest_list, 0, -1);
+        add_dest_if_on_board(source, &mut dest_list, 0, 1);
+        for dest in dest_list {
+            if self.board[dest.0][dest.1] != (clear_piece_color(self.board[dest.0][dest.1]) | self.protagonist) {
+                move_vec.push((source, dest));
+            }
+        }
+        // TODO: add castling
+        move_vec
+    }
+
 
     pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
         if clear_piece_color(self.board[source.0][source.1]) == KING {
@@ -171,3 +254,19 @@ pub fn clear_piece_color(piece : u8) -> u8 {
 }
 
 
+fn step_usize(unsigned_int : usize, step : i8) -> usize {
+    match step {
+        0=>unsigned_int,
+        1=>unsigned_int+1,
+        -1=>unsigned_int-1,
+        _=>panic!("Illegal step bigger than 1")
+    }
+}
+
+fn add_dest_if_on_board (source : (usize, usize), dest_list : &mut Vec<(usize, usize)>, hor_step : i8, lat_step : i8){
+    let rank = source.0;
+    let file = source.1;
+    if (hor_step != 1 || rank < 7) && (hor_step != -1 || rank > 0) && (lat_step != 1 || file < 7) && (lat_step != -1 || file > 0) {
+        dest_list.push((step_usize(rank, lat_step), step_usize(file, hor_step)));
+    }
+}
