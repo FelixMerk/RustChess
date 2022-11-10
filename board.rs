@@ -100,7 +100,7 @@ impl ChessBoard {
         if rank >= 1 && file <= 5 {
             dest_list.push((rank - 1, file + 2));
         }
-        if rank >= 2 && file <= 5 {
+        if rank >= 2 && file <= 6 {
             dest_list.push((rank - 2, file + 1));
         }
         if rank <= 6 && file >= 2 {
@@ -116,7 +116,8 @@ impl ChessBoard {
             dest_list.push((rank - 2, file - 1));
         }
         for dest in dest_list {
-            if self.board[dest.0][dest.1] != (clear_piece_color(self.board[dest.0][dest.1]) | self.protagonist) {
+            let d_piece = self.board[dest.0][dest.1];
+            if d_piece == 0b0000 || d_piece != (clear_piece_color(d_piece) | self.protagonist) {
                 move_vec.push((source, dest));
             }
         }
@@ -177,32 +178,20 @@ impl ChessBoard {
         add_dest_if_on_board(source, &mut dest_list, 0, -1);
         add_dest_if_on_board(source, &mut dest_list, 0, 1);
         for dest in dest_list {
-            if self.board[dest.0][dest.1] != (clear_piece_color(self.board[dest.0][dest.1]) | self.protagonist) {
+            let d_piece = self.board[dest.0][dest.1];
+            if d_piece == 0b0000 || d_piece != (clear_piece_color(d_piece) | self.protagonist) {
                 move_vec.push((source, dest));
             }
         }
         // Castling
-        if self.protagonist == WHITE {
-            if self.white_kingside_castle {
-                if !self.in_check(source) && !self.in_check((source.0, source.1 + 1)) {
-                    move_vec.push((source, (source.0, source.1 + 2)))
-                }
+        if (self.white_kingside_castle && self.protagonist == WHITE) || (self.black_kingside_castle && self.protagonist == BLACK) {
+            if !self.in_check(source) && !self.in_check((source.0, source.1 + 1)) && self.board[source.0][source.1+1] == 0 && self.board[source.0][source.1+2] == 0 {
+                move_vec.push((source, (source.0, source.1 + 2)))
             }
-            if self.white_queenside_castle {
-                if !self.in_check(source) && !self.in_check((source.0, source.1 - 1)) {
-                    move_vec.push((source, (source.0, source.1 - 2)))
-                }
-            }
-        } else if self.protagonist == BLACK {
-            if self.black_kingside_castle {
-                if !self.in_check(source) && !self.in_check((source.1, source.1 + 1)) {
-                    move_vec.push((source, (source.0, source.1 + 2)))
-                }
-            }
-            if self.black_queenside_castle {
-                if !self.in_check(source) && !self.in_check((source.0, source.1 - 1)) {
-                    move_vec.push((source, (source.0, source.1 - 2)))
-                }
+        }
+        if (self.white_queenside_castle && self.protagonist == WHITE) || (self.black_queenside_castle && self.protagonist == BLACK) {
+            if !self.in_check(source) && !self.in_check((source.0, source.1 - 1)) && self.board[source.0][source.1-1] == 0 && self.board[source.0][source.1-2] == 0 && self.board[source.0][source.1-3] == 0 {
+                move_vec.push((source, (source.0, source.1 - 2)))
             }
         }
         move_vec
@@ -281,11 +270,10 @@ impl ChessBoard {
                 if self.board[source.0+1][source.1] == 0b0000 {
                     move_vec.push((source, (source.0+1, source.1, 0b0000)));
                 }
-                if source.1 < 7 && (self.opponent source.0+1][source.1+1] & self.opponent == self.opponent) {
-                if source.1 < 7 && (self.enemy_piece(source.0+1, source.1+1)) {
+                if source.1 < 7 && self.enemy_piece(source.0+1, source.1+1) {
                     move_vec.push((source, (source.0+1, source.1+1, 0b0000)));
                 }
-                if source.1 > 0 && (self.board[source.0+1][source.1-1] & self.opponent == self.opponent) {
+                if source.1 > 0 && self.enemy_piece(source.0+1,source.1-1) {
                     move_vec.push((source, (source.0+1, source.1-1, 0b0000)));
                 }
                 if self.ep.is_some() && source.1 < 7 && (source.0+1,source.1+1) == self.ep.unwrap() { // En Passent
@@ -299,10 +287,10 @@ impl ChessBoard {
                 if self.board[source.0+1][source.1] == 0b0000 {
                     move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1)));
                 }
-                if source.1 < 7 && (self.board[source.0+1][source.1+1] & self.opponent == self.opponent) {
+                if source.1 < 7 && self.enemy_piece(source.0+1,source.1+1) {
                     move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1+1)));
                 }
-                if source.1 > 0 && (self.board[source.0+1][source.1-1] & self.opponent == self.opponent) {
+                if source.1 > 0 && self.enemy_piece(source.0+1,source.1-1) {
                     move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1-1)));
                 }
             }
@@ -316,10 +304,10 @@ impl ChessBoard {
                 if self.board[source.0-1][source.1] == 0b0000 {
                     move_vec.push((source, (source.0-1, source.1, 0b0000)));
                 }
-                if source.1 < 7 && (self.board[source.0-1][source.1+1] & self.opponent == self.opponent) {
+                if source.1 < 7 && self.enemy_piece(source.0-1,source.1+1) {
                     move_vec.push((source, (source.0-1, source.1+1, 0b0000)));
                 }
-                if source.1 > 0 && (self.board[source.0-1][source.1-1] & self.opponent == self.opponent) {
+                if source.1 > 0 && self.enemy_piece(source.0-1,source.1-1) {
                     move_vec.push((source, (source.0-1, source.1-1, 0b0000)));
                 }
                 if self.ep.is_some() && source.1 < 7 && (source.0-1,source.1+1) == self.ep.unwrap() { // En Passent
@@ -333,10 +321,10 @@ impl ChessBoard {
                 if self.board[source.0-1][source.1] == 0b0000 {
                     move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1)));
                 }
-                if source.1 < 7 && (self.board[source.0-1][source.1+1] & self.opponent == self.opponent) {
+                if source.1 < 7 && self.enemy_piece(source.0-1,source.1+1) {
                     move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1+1)));
                 }
-                if source.1 > 0 && (self.board[source.0-1][source.1-1] & self.opponent == self.opponent) {
+                if source.1 > 0 && self.enemy_piece(source.0-1,source.1-1) {
                     move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1-1)));
                 }
             }
@@ -364,7 +352,7 @@ impl ChessBoard {
         for row in 0..=7 {
             for col in 0..=7 {
                 let piece : u8 = self.board[row][col];
-                if (piece != 0b0000) && ((piece & self.protagonist) == self.protagonist) {
+                if (piece != 0b0000) && ((piece & 0b1000) == self.protagonist) {
                     let source = (row, col);
                     match clear_piece_color(piece) {
                         PAWN=>pawn_move_vec.append(&mut self.pawn_moves(source)),
@@ -399,6 +387,10 @@ impl ChessBoard {
         }
         self.board[dest.0][dest.1] = self.board[source.0][source.1];
         self.board[source.0][source.1] = 0b0000;
+
+        let temp = self.protagonist;
+        self.protagonist = self.opponent;
+        self.opponent = temp;
     }
 
     pub fn unmake(&mut self, source: (usize, usize), dest: (usize, usize), captured_piece: u8) {
@@ -470,9 +462,6 @@ fn step_usize(unsigned_int : usize, step : i8) -> usize {
 fn add_dest_if_on_board (source : (usize, usize), dest_list : &mut Vec<(usize, usize)>, hor_step : i8, lat_step : i8){
     let rank = source.0;
     let file = source.1;
-    println!("{:?}", source);
-    println!("{:?}", hor_step);
-    println!("{:?}", lat_step);
     if (hor_step != 1 || file < 7) && (hor_step != -1 || file > 0) && (lat_step != 1 || rank < 7) && (lat_step != -1 || rank > 0) {
         dest_list.push((step_usize(rank, lat_step), step_usize(file, hor_step)));
     }

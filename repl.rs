@@ -1,10 +1,23 @@
 mod board;
 
 fn main() {
+    _test_checks();
     let stuff = [[0u8; 8]; 8];
     let starting_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let mut board3 = board::build_board(stuff);
     board3.from_fen(starting_position);
+    let moves = board3.get_all_moves();
+    println!("{:?}", moves);
+    println!("{:?}", moves.len());
+
+    board3.make((6, 0), (5, 0));
+    println!("{}", board3);
+    let moves = board3.get_all_moves();
+    println!("{:?}", moves);
+    println!("{:?}", moves.len());
+
+    board3.make((1, 5), (3, 5));
+    println!("{}", board3);
     let moves = board3.get_all_moves();
     println!("{:?}", moves);
     println!("{:?}", moves.len());
