@@ -1,11 +1,32 @@
 mod board;
 
 fn main() {
-    //_test_make_unmake_simple();
-    //_test_make_unmake_castle();
-    //_king_castles();
-    _test_checks();
-    _pawn_moves();
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+    let moves = board3.get_all_moves();
+    println!("{:?}", moves);
+    println!("{:?}", moves.len());
+}
+
+
+fn _practice_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+    println!("Starting Position");
+    println!("{}", board3);
+
+    board3.make((6,4),(4,4));
+    println!("{}", board3);
+
+    board3.make((1,3),(3,3));
+    println!("{}", board3);
+
+    board3.make((4,4),(3,3));
+    println!("{}", board3);
 }
 
 fn _pawn_moves() {

@@ -281,7 +281,8 @@ impl ChessBoard {
                 if self.board[source.0+1][source.1] == 0b0000 {
                     move_vec.push((source, (source.0+1, source.1, 0b0000)));
                 }
-                if source.1 < 7 && (self.board[source.0+1][source.1+1] & self.opponent == self.opponent) {
+                if source.1 < 7 && (self.opponent source.0+1][source.1+1] & self.opponent == self.opponent) {
+                if source.1 < 7 && (self.enemy_piece(source.0+1, source.1+1)) {
                     move_vec.push((source, (source.0+1, source.1+1, 0b0000)));
                 }
                 if source.1 > 0 && (self.board[source.0+1][source.1-1] & self.opponent == self.opponent) {
@@ -347,6 +348,41 @@ impl ChessBoard {
         }
 
         move_vec
+    }
+
+    fn enemy_piece(& self, row : usize, col : usize) -> bool {
+        let piece = self.board[row][col];
+        if piece != 0b0000 {
+            return (piece & 0b1000) == self.opponent;
+        }
+        false
+    }
+
+    pub fn get_all_moves(&mut self) -> Vec<((usize, usize),(usize, usize, u8))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+        let mut pawn_move_vec : Vec<((usize, usize),(usize, usize, u8))> = Vec::new();
+        for row in 0..=7 {
+            for col in 0..=7 {
+                let piece : u8 = self.board[row][col];
+                if (piece != 0b0000) && ((piece & self.protagonist) == self.protagonist) {
+                    let source = (row, col);
+                    match clear_piece_color(piece) {
+                        PAWN=>pawn_move_vec.append(&mut self.pawn_moves(source)),
+                        KING=>move_vec.append(&mut self.king_moves(source)),
+                        QUEEN=>move_vec.append(&mut self.queen_moves(source)),
+                        ROOK=>move_vec.append(&mut self.rook_moves(source)),
+                        KNIGHT=>move_vec.append(&mut self.knight_moves(source)),
+                        BISHOP=>move_vec.append(&mut self.bishop_moves(source)),
+                        0=>(),
+                        6_u8 | 8_u8..=u8::MAX => assert!(false, "CHAOS"),
+                    };
+                }
+            }
+        }
+        for amove in move_vec {
+            pawn_move_vec.push((amove.0, (amove.1.0, amove.1.1, 0b0000)));
+        }
+        pawn_move_vec
     }
 
     pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
@@ -434,7 +470,10 @@ fn step_usize(unsigned_int : usize, step : i8) -> usize {
 fn add_dest_if_on_board (source : (usize, usize), dest_list : &mut Vec<(usize, usize)>, hor_step : i8, lat_step : i8){
     let rank = source.0;
     let file = source.1;
-    if (hor_step != 1 || rank < 7) && (hor_step != -1 || rank > 0) && (lat_step != 1 || file < 7) && (lat_step != -1 || file > 0) {
+    println!("{:?}", source);
+    println!("{:?}", hor_step);
+    println!("{:?}", lat_step);
+    if (hor_step != 1 || file < 7) && (hor_step != -1 || file > 0) && (lat_step != 1 || rank < 7) && (lat_step != -1 || rank > 0) {
         dest_list.push((step_usize(rank, lat_step), step_usize(file, hor_step)));
     }
 }
@@ -447,3 +486,4 @@ fn create_promo_moves(source: (usize, usize), dest: (usize, usize)) -> Vec<((usi
     move_vec.push((source, (dest.0, dest.1, KNIGHT)));
     move_vec
 }
+
