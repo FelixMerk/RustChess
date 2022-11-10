@@ -37,8 +37,9 @@ impl ChessBoard {
         self.board = [[0u8; 8]; 8];
         let mut row = 0;
         let mut col = 0;
+        let mut space_count = 0;
         for c in fen.chars() {
-            if c != ' ' {
+            if c != ' ' && space_count == 0 {
                 let color : u8 = if c.is_lowercase() {
                     BLACK
                 } else {
@@ -79,7 +80,15 @@ impl ChessBoard {
                     _ => println!("Unsupported fen char"),
                 };
             } else {
-                break;
+                if c == ' ' {
+                    space_count += 1;
+                } else if space_count == 1 {
+                    if c == 'w' {
+                        self.protagonist = WHITE;
+                    } else {
+                        self.protagonist = BLACK;
+                    }
+                }
             }
         }
     }
@@ -88,8 +97,8 @@ impl ChessBoard {
         let mut move_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
         let mut dest_list = Vec::new();
 
-        let mut rank = source.0;
-        let mut file = source.1;
+        let rank = source.0;
+        let file = source.1;
 
         if rank <= 6 && file <= 5 {
             dest_list.push((rank + 1, file + 2));
@@ -373,7 +382,9 @@ impl ChessBoard {
         pawn_move_vec
     }
 
-    pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
+    pub fn make(&mut self, source: (usize, usize), dest: (usize, usize, u8)) -> u8 {
+        let captured_piece = self.board[dest.0][dest.1];
+
         if clear_piece_color(self.board[source.0][source.1]) == KING {
             if source.1.abs_diff(dest.1) > 1 { // Castling
                 if source.1 > dest.1 { // Queenside
@@ -385,15 +396,24 @@ impl ChessBoard {
                 }
             }
         }
-        self.board[dest.0][dest.1] = self.board[source.0][source.1];
+        if dest.2 == 0 {
+            self.board[dest.0][dest.1] = self.board[source.0][source.1];
+        } else { // Promotion
+            self.board[dest.0][dest.1] = dest.2 | self.protagonist;
+        }
         self.board[source.0][source.1] = 0b0000;
 
         let temp = self.protagonist;
         self.protagonist = self.opponent;
         self.opponent = temp;
+        captured_piece
     }
 
-    pub fn unmake(&mut self, source: (usize, usize), dest: (usize, usize), captured_piece: u8) {
+    pub fn unmake(&mut self, source: (usize, usize), dest: (usize, usize, u8), captured_piece: u8) {
+        let temp = self.protagonist;
+        self.protagonist = self.opponent;
+        self.opponent = temp;
+
         if clear_piece_color(self.board[dest.0][dest.1]) == KING {
             if source.1.abs_diff(dest.1) > 1 { // UnCastling
                 if source.1 > dest.1 { // Queenside
@@ -406,11 +426,15 @@ impl ChessBoard {
             }
         }
 
-        self.board[source.0][source.1] = self.board[dest.0][dest.1];
+        if dest.2 == 0 {
+            self.board[source.0][source.1] = self.board[dest.0][dest.1];
+        } else { // Unpromotion
+            self.board[source.0][source.1] = PAWN | self.protagonist;
+        }
         self.board[dest.0][dest.1] = captured_piece;
     }
 
-    pub fn unmake_ep(&mut self, source: (usize, usize), dest: (usize, usize), captured_piece: u8, ep: (usize, usize)) {
+    pub fn unmake_ep(&mut self, source: (usize, usize), dest: (usize, usize, u8), captured_piece: u8, ep: (usize, usize)) {
         self.board[ep.0][ep.1] = PAWN | self.opponent;
         self.unmake(source, dest, captured_piece);
     }
