@@ -6,10 +6,15 @@ pub struct ChessBoard {
     pub board: [[u8; 8]; 8],
     opponent: u8,
     protagonist: u8,
+    white_kingside_castle: bool,
+    white_queenside_castle: bool,
+    black_kingside_castle: bool,
+    black_queenside_castle: bool,
+    ep: Option<(usize, usize)>,
 }
 
 pub fn build_board(board: [[u8; 8]; 8]) -> ChessBoard {
-    ChessBoard{ board: board , opponent: BLACK , protagonist: WHITE }
+    ChessBoard{ board: board , opponent: BLACK , protagonist: WHITE, white_kingside_castle: true, white_queenside_castle: true, black_kingside_castle: true, black_queenside_castle: true, ep: None}
 }
 
 
@@ -176,10 +181,173 @@ impl ChessBoard {
                 move_vec.push((source, dest));
             }
         }
-        // TODO: add castling
+        // Castling
+        if self.protagonist == WHITE {
+            if self.white_kingside_castle {
+                if !self.in_check(source) && !self.in_check((source.0, source.1 + 1)) {
+                    move_vec.push((source, (source.0, source.1 + 2)))
+                }
+            }
+            if self.white_queenside_castle {
+                if !self.in_check(source) && !self.in_check((source.0, source.1 - 1)) {
+                    move_vec.push((source, (source.0, source.1 - 2)))
+                }
+            }
+        } else if self.protagonist == BLACK {
+            if self.black_kingside_castle {
+                if !self.in_check(source) && !self.in_check((source.1, source.1 + 1)) {
+                    move_vec.push((source, (source.0, source.1 + 2)))
+                }
+            }
+            if self.black_queenside_castle {
+                if !self.in_check(source) && !self.in_check((source.0, source.1 - 1)) {
+                    move_vec.push((source, (source.0, source.1 - 2)))
+                }
+            }
+        }
         move_vec
     }
 
+    pub fn in_check(& self, source: (usize, usize)) -> bool {
+        // If square is being attacked
+
+        // Knight Checks
+        let knight_moves : Vec<((usize, usize),(usize, usize))> = self.knight_moves(source);
+        for a_move in knight_moves {
+            let dest = a_move.1;
+            if self.board[dest.0][dest.1] == KNIGHT | self.opponent {
+                return true;
+            }
+        }
+        // Diagonal Checks
+        let diagonal_moves : Vec<((usize, usize),(usize, usize))> = self.bishop_moves(source);
+        for a_move in diagonal_moves {
+            let dest = a_move.1;
+            if self.board[dest.0][dest.1] == BISHOP | self.opponent {
+                return true;
+            }
+
+            if self.board[dest.0][dest.1] == QUEEN | self.opponent {
+                return true;
+            }
+        }
+        // Horizontal/Vertical Checks
+        let rook_moves : Vec<((usize, usize),(usize, usize))> = self.rook_moves(source);
+        for a_move in rook_moves {
+            let dest = a_move.1;
+            if self.board[dest.0][dest.1] == ROOK | self.opponent {
+                return true;
+            }
+
+            if self.board[dest.0][dest.1] == QUEEN | self.opponent {
+                return true;
+            }
+        }
+
+        // Pawn Moves
+        if self.opponent == WHITE {
+            if source.0 > 0 && source.1 > 0 {
+                if self.board[source.0-1][source.1-1] == PAWN | self.opponent {
+                    return true;
+                }
+            }
+            if source.0 > 0 && source.1 < 7 {
+                if self.board[source.0-1][source.1+1] == PAWN | self.opponent {
+                    return true;
+                }
+            }
+        }
+
+        if self.opponent == BLACK {
+            if source.0 < 7 && source.1 > 0 {
+                if self.board[source.0+1][source.1-1] == PAWN | self.opponent {
+                    return true;
+                }
+            }
+            if source.0 < 7 && source.1 < 7 {
+                if self.board[source.0+1][source.1+1] == PAWN | self.opponent {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    pub fn pawn_moves(& self, source: (usize, usize)) -> Vec<((usize, usize),(usize, usize, u8))> {
+        let mut move_vec : Vec<((usize, usize),(usize, usize, u8))> = Vec::new();
+        if self.protagonist == BLACK {
+            if source.0 < 6 {
+                if self.board[source.0+1][source.1] == 0b0000 {
+                    move_vec.push((source, (source.0+1, source.1, 0b0000)));
+                }
+                if source.1 < 7 && (self.board[source.0+1][source.1+1] & self.opponent == self.opponent) {
+                    move_vec.push((source, (source.0+1, source.1+1, 0b0000)));
+                }
+                if source.1 > 0 && (self.board[source.0+1][source.1-1] & self.opponent == self.opponent) {
+                    move_vec.push((source, (source.0+1, source.1-1, 0b0000)));
+                }
+                if self.ep.is_some() && source.1 < 7 && (source.0+1,source.1+1) == self.ep.unwrap() { // En Passent
+                    move_vec.push((source, (source.0+1, source.1+1, 0b0000)));
+                }
+                if self.ep.is_some() && source.1 > 0 && (source.0+1,source.1-1) == self.ep.unwrap() { // En Passent
+                    move_vec.push((source, (source.0+1, source.1-1, 0b0000)));
+                }
+            }
+            if source.0 == 6 { // Promo
+                if self.board[source.0+1][source.1] == 0b0000 {
+                    move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1)));
+                }
+                if source.1 < 7 && (self.board[source.0+1][source.1+1] & self.opponent == self.opponent) {
+                    move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1+1)));
+                }
+                if source.1 > 0 && (self.board[source.0+1][source.1-1] & self.opponent == self.opponent) {
+                    move_vec.append(&mut create_promo_moves(source, (source.0+1, source.1-1)));
+                }
+            }
+            if source.0 == 1 { // Move 2
+                if self.board[source.0+1][source.1] == 0b0000 && self.board[source.0+2][source.1] == 0b0000 {
+                    move_vec.push((source, (source.0+2, source.1, 0b0000)));
+                }
+            }
+        } else {
+            if source.0 > 1 {
+                if self.board[source.0-1][source.1] == 0b0000 {
+                    move_vec.push((source, (source.0-1, source.1, 0b0000)));
+                }
+                if source.1 < 7 && (self.board[source.0-1][source.1+1] & self.opponent == self.opponent) {
+                    move_vec.push((source, (source.0-1, source.1+1, 0b0000)));
+                }
+                if source.1 > 0 && (self.board[source.0-1][source.1-1] & self.opponent == self.opponent) {
+                    move_vec.push((source, (source.0-1, source.1-1, 0b0000)));
+                }
+                if self.ep.is_some() && source.1 < 7 && (source.0-1,source.1+1) == self.ep.unwrap() { // En Passent
+                    move_vec.push((source, (source.0-1, source.1+1, 0b0000)));
+                }
+                if self.ep.is_some() && source.1 > 0 && (source.0-1,source.1-1) == self.ep.unwrap() { // En Passent
+                    move_vec.push((source, (source.0-1, source.1-1, 0b0000)));
+                }
+            }
+            if source.0 == 1 { // Promo
+                if self.board[source.0-1][source.1] == 0b0000 {
+                    move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1)));
+                }
+                if source.1 < 7 && (self.board[source.0-1][source.1+1] & self.opponent == self.opponent) {
+                    move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1+1)));
+                }
+                if source.1 > 0 && (self.board[source.0-1][source.1-1] & self.opponent == self.opponent) {
+                    move_vec.append(&mut create_promo_moves(source, (source.0-1, source.1-1)));
+                }
+            }
+            if source.0 == 6 { // Move 2
+                if self.board[source.0-1][source.1] == 0b0000 && self.board[source.0-2][source.1] == 0b0000 {
+                    move_vec.push((source, (source.0-2, source.1, 0b0000)));
+                }
+            }
+        }
+
+        move_vec
+    }
 
     pub fn make(&mut self, source: (usize, usize), dest: (usize, usize)) {
         if clear_piece_color(self.board[source.0][source.1]) == KING {
@@ -269,4 +437,13 @@ fn add_dest_if_on_board (source : (usize, usize), dest_list : &mut Vec<(usize, u
     if (hor_step != 1 || rank < 7) && (hor_step != -1 || rank > 0) && (lat_step != 1 || file < 7) && (lat_step != -1 || file > 0) {
         dest_list.push((step_usize(rank, lat_step), step_usize(file, hor_step)));
     }
+}
+
+fn create_promo_moves(source: (usize, usize), dest: (usize, usize)) -> Vec<((usize, usize),(usize, usize, u8))> {
+    let mut move_vec : Vec<((usize, usize),(usize, usize, u8))> = Vec::new();
+    move_vec.push((source, (dest.0, dest.1, QUEEN)));
+    move_vec.push((source, (dest.0, dest.1, ROOK)));
+    move_vec.push((source, (dest.0, dest.1, BISHOP)));
+    move_vec.push((source, (dest.0, dest.1, KNIGHT)));
+    move_vec
 }

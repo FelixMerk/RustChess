@@ -3,8 +3,60 @@ mod board;
 fn main() {
     //_test_make_unmake_simple();
     //_test_make_unmake_castle();
-    _king_moves();
-    _knight_moves();
+    //_king_castles();
+    _test_checks();
+    _pawn_moves();
+}
+
+fn _pawn_moves() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.pawn_moves((4,4));
+    println!("{:?}", moves);
+    paint_pawn_moves(&mut board3, moves);
+
+    board3.from_fen(starting_position);
+    let moves2 = board3.pawn_moves((7,6));
+    paint_pawn_moves(&mut board3, moves2);
+
+    board3.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    let moves3 = board3.pawn_moves((1,1));
+    paint_pawn_moves(&mut board3, moves3);
+
+    board3.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    let moves4 = board3.pawn_moves((5,3));
+    paint_pawn_moves(&mut board3, moves4);
+}
+
+fn _test_checks() {
+    let stuff = [[0u8; 8]; 8];
+    let a_pos = "8/8/3p4/5p2/8/8/2n5/1r2bq2 w - - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(a_pos);
+
+    assert!(board3.in_check((0,0))==false, "a8 should not be in check");
+    assert!(board3.in_check((0,1))==true, "b8 should be in check");
+    assert!(board3.in_check((3,4))==false, "e5 should not be in check");
+    assert!(board3.in_check((4,2))==true, "c4 should be in check");
+    assert!(board3.in_check((4,3))==true, "d4 should be in check");
+}
+
+fn _king_castles() {
+    let stuff = [[0u8; 8]; 8];
+    let starting_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
+    let mut board3 = board::build_board(stuff);
+    board3.from_fen(starting_position);
+
+    let moves = board3.king_moves((4,4));
+    println!("{:?}", moves);
+    paint_moves(&mut board3, moves);
+
+    board3.from_fen("8/r7/3P4/2K5/8/8/8/6B1 w - - 0 1");
+    let moves2 = board3.king_moves((3,2));
+    paint_moves(&mut board3, moves2);
 }
 
 fn _king_moves() {
@@ -87,6 +139,14 @@ fn _knight_moves() {
     let moves4 = board3.knight_moves((1,0));
     let moves4 = board3.knight_moves((0,1));
     paint_moves(&mut board3, moves3);
+}
+
+fn paint_pawn_moves(board : &mut board::ChessBoard, moves : Vec<((usize, usize),(usize, usize, u8))>) {
+    let mut a_vec : Vec<((usize, usize),(usize, usize))> = Vec::new();
+    for amove in moves {
+        a_vec.push((amove.0,(amove.1.0, amove.1.1)));
+    }
+    paint_moves(board, a_vec);
 }
 
 fn paint_moves(board : &mut board::ChessBoard, moves : Vec<((usize, usize),(usize, usize))>) {
