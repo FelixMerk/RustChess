@@ -7,10 +7,10 @@ pub struct ChessBoard {
     pub board: [[u8; 8]; 8],
     opponent: u8,
     pub protagonist: u8,
-    white_kingside_castle: bool,
-    white_queenside_castle: bool,
-    black_kingside_castle: bool,
-    black_queenside_castle: bool,
+    pub white_kingside_castle: bool,
+    pub white_queenside_castle: bool,
+    pub black_kingside_castle: bool,
+    pub black_queenside_castle: bool,
     pub  ep: Option<(usize, usize)>,
     pub white_king_pos: (usize, usize),
     pub black_king_pos: (usize, usize),
@@ -275,7 +275,7 @@ impl ChessBoard {
         }
 
         // Pawn Moves
-        if self.opponent == WHITE {
+        if self.opponent == BLACK {
             if source.0 > 0 && source.1 > 0 {
                 if self.board[source.0-1][source.1-1] == PAWN | self.opponent {
                     return true;
@@ -288,7 +288,7 @@ impl ChessBoard {
             }
         }
 
-        if self.opponent == BLACK {
+        if self.opponent == WHITE {
             if source.0 < 7 && source.1 > 0 {
                 if self.board[source.0+1][source.1-1] == PAWN | self.opponent {
                     return true;
@@ -418,12 +418,38 @@ impl ChessBoard {
         let captured_piece = self.board[dest.0][dest.1];
         let piece = self.board[source.0][source.1];
 
-        if clear_piece_color(piece) == KING {
-            if self.protagonist == WHITE { // Update King Pos
-                self.white_king_pos = (dest.0, dest.1);
+        if clear_piece_color(piece) == ROOK { // Castling Rights Moving Rook
+            if self.protagonist == WHITE {
+                if source.1 == 0 {
+                    self.white_queenside_castle = false;
+                } else if source.1 == 7 {
+                    self.white_kingside_castle = false;
+                }
             } else {
-                self.black_king_pos = (dest.0, dest.1);
+                if source.1 == 0 {
+                    self.black_queenside_castle = false;
+                } else if source.1 == 7 {
+                    self.black_kingside_castle = false;
+                }
             }
+        }
+        if clear_piece_color(captured_piece) == ROOK { // Castling Rights Captured Rook
+            if self.opponent == WHITE {
+                if dest.1 == 0 {
+                    self.white_queenside_castle = false;
+                } else if dest.1 == 7 {
+                    self.white_kingside_castle = false;
+                }
+            } else {
+                if dest.1 == 0 {
+                    self.black_queenside_castle = false;
+                } else if dest.1 == 7 {
+                    self.black_kingside_castle = false;
+                }
+            }
+        }
+
+        if clear_piece_color(piece) == KING {
             if source.1.abs_diff(dest.1) > 1 { // Castling
                 if source.1 > dest.1 { // Queenside
                     self.board[source.0][dest.1 + 1] = self.board[source.0][0];
@@ -432,6 +458,15 @@ impl ChessBoard {
                     self.board[source.0][dest.1 - 1] = self.board[source.0][7];
                     self.board[source.0][7] = 0b0000;
                 }
+            }
+            if self.protagonist == WHITE { // Update King Pos
+                self.white_king_pos = (dest.0, dest.1);
+                self.white_kingside_castle = false;
+                self.white_queenside_castle = false;
+            } else {
+                self.black_king_pos = (dest.0, dest.1);
+                self.black_kingside_castle = false;
+                self.black_queenside_castle = false;
             }
         }
         if dest.2 == 0 {
@@ -462,6 +497,10 @@ impl ChessBoard {
         }
 
         let mut illegal = false;
+        print!("{:?}", self.protagonist);
+        print!("{:?}", self.white_king_pos);
+        print!("{:?}\n", self.in_check(self.white_king_pos));
+        print!("{}\n", self);
         if ((self.protagonist == 0b1000) && self.in_check(self.white_king_pos)) || ((self.protagonist == 0b0000) && self.in_check(self.black_king_pos)) {
             // King illegally left in check
             illegal = true;
@@ -515,11 +554,6 @@ impl ChessBoard {
         }
 
         self.board[dest.0][dest.1] = captured_piece;
-    }
-
-    pub fn unmake_ep(&mut self, source: (usize, usize), dest: (usize, usize, u8), captured_piece: u8, ep: (usize, usize)) {
-        self.board[ep.0][ep.1] = PAWN | self.opponent;
-        self.unmake(source, dest, captured_piece);
     }
 }
 

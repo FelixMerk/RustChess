@@ -2,6 +2,15 @@ mod board;
 
 fn main() {
     _test_checks();
+}
+
+pub fn print_moves(moves :& Vec<((usize, usize), (usize, usize, u8))>) {
+    for amove in moves {
+        println!("{}, {}", board::square_to_alphanumeric(amove.0), board::square_to_alphanumeric((amove.1.0,amove.1.1)));
+    }
+}
+
+fn _practice_moves3() {
     let stuff = [[0u8; 8]; 8];
     let mut board3 = board::build_board(stuff);
 
@@ -16,12 +25,6 @@ fn main() {
     println!("{}", board3);
     board3.unmake((3, 3), (2, 4, 0), 0);
     println!("{}", board3);
-}
-
-fn print_moves(moves :& Vec<((usize, usize), (usize, usize, u8))>) {
-    for amove in moves {
-        println!("{}, {}", board::square_to_alphanumeric(amove.0), board::square_to_alphanumeric((amove.1.0,amove.1.1)));
-    }
 }
 
 fn _practice_moves2() {
@@ -99,6 +102,10 @@ fn _test_checks() {
     assert!(board3.in_check((3,4))==false, "e5 should not be in check");
     assert!(board3.in_check((4,2))==true, "c4 should be in check");
     assert!(board3.in_check((4,3))==true, "d4 should be in check");
+
+    let a_pos = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
+    board3.from_fen(a_pos);
+    assert!(board3.in_check((1,2))==true, "b6 should be in check");
 }
 
 fn _king_castles() {
