@@ -99,13 +99,13 @@ fn _test_checks() {
 
     assert!(board3.in_check((0,0))==false, "a8 should not be in check");
     assert!(board3.in_check((0,1))==true, "b8 should be in check");
-    assert!(board3.in_check((3,4))==false, "e5 should not be in check");
+    assert!(board3.in_check((3,4))==true, "e5 should be in check");
     assert!(board3.in_check((4,2))==true, "c4 should be in check");
     assert!(board3.in_check((4,3))==true, "d4 should be in check");
 
     let a_pos = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
     board3.from_fen(a_pos);
-    assert!(board3.in_check((1,2))==true, "b6 should be in check");
+    assert!(board3.in_check((2,1))==true, "b6 should be in check");
 }
 
 fn _king_castles() {
