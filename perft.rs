@@ -45,10 +45,17 @@ fn perft(board : &mut board::ChessBoard, perft_count :&mut u64, depth : u16, deb
         board.white_queenside_castle = white_queenside_castle;
         board.black_kingside_castle = black_kingside_castle;
         board.black_queenside_castle = black_queenside_castle;
+
+        // By move split
+        //if depth == 5 {
+        //    println!("{}, {}", board::square_to_alphanumeric(amove.0), board::square_to_alphanumeric((amove.1.0,amove.1.1)));
+        //    println!(": {}", perft_count); 
+        //}
     }
-    if legal_moves == 0 {// check or stalemate position
-        *perft_count += 1;
-    }
+    //if legal_moves == 0  {// check or stalemate position
+    // These should are counted for perf at the n-1 depth
+    //    *perft_count += 1;
+    //}
 }
 
 
@@ -77,19 +84,23 @@ fn main() {
     // Actual 4,865,644
     // Actual 4,865,652
     // Actual 4,865,617
+    // Actual! 4,865,609
     // let starting_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    // Expected 4085603 at depth 4
+    // Expect 4085603 at depth 4
     // Actual 4085604
     // let starting_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
 
-    // Expected 422333 at depth 4
+    // Expect 422333 at depth 4
     // Actual 422349
-    let starting_position = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
+    // Actual 422355
+    // Actual 422333 !
+    // let starting_position = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 
-    // Expected 2,103,487 at depth 4
+    // Expect 2,103,487 at depth 4
     // Actual 2,103,531
-    // let starting_position = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+    // Actual 2,103,487 !
+    let starting_position = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 
     board.from_fen(starting_position);
     // perft(&mut board, &mut perft_count, 5);
@@ -98,6 +109,4 @@ fn main() {
     print!("{:?}\n", debug_count);
     print!("{}\n", board);
 }
-
-
 
