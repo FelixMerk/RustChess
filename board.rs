@@ -419,31 +419,32 @@ impl ChessBoard {
         let piece = self.board[source.0][source.1];
 
         if clear_piece_color(piece) == ROOK { // Castling Rights Moving Rook
+            // Note: a promoed rook can move about
             if self.protagonist == WHITE {
-                if source.1 == 0 {
+                if source.1 == 0 && source.0 == 7 {
                     self.white_queenside_castle = false;
-                } else if source.1 == 7 {
+                } else if source.1 == 7 && source.0 == 7 {
                     self.white_kingside_castle = false;
                 }
             } else {
-                if source.1 == 0 {
+                if source.1 == 0 && source.0 == 0 {
                     self.black_queenside_castle = false;
-                } else if source.1 == 7 {
+                } else if source.1 == 7 && source.0 == 0 {
                     self.black_kingside_castle = false;
                 }
             }
         }
         if clear_piece_color(captured_piece) == ROOK { // Castling Rights Captured Rook
             if self.opponent == WHITE {
-                if dest.1 == 0 {
+                if dest.1 == 0 && dest.0 == 7 {
                     self.white_queenside_castle = false;
-                } else if dest.1 == 7 {
+                } else if dest.1 == 7 && dest.0 == 7 {
                     self.white_kingside_castle = false;
                 }
             } else {
-                if dest.1 == 0 {
+                if dest.1 == 0 && dest.0 == 0 {
                     self.black_queenside_castle = false;
-                } else if dest.1 == 7 {
+                } else if dest.1 == 7 && dest.0 == 0 {
                     self.black_kingside_castle = false;
                 }
             }
@@ -497,10 +498,6 @@ impl ChessBoard {
         }
 
         let mut illegal = false;
-        print!("{:?}", self.protagonist);
-        print!("{:?}", self.white_king_pos);
-        print!("{:?}\n", self.in_check(self.white_king_pos));
-        print!("{}\n", self);
         if ((self.protagonist == 0b1000) && self.in_check(self.white_king_pos)) || ((self.protagonist == 0b0000) && self.in_check(self.black_king_pos)) {
             // King illegally left in check
             illegal = true;
