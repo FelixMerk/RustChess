@@ -4,10 +4,12 @@ fn perft(board : &mut board::ChessBoard, perft_count :&mut u64, depth : u16) {
     let moves = board.get_all_moves();
     for amove in moves {
         // let captured_piece : u8 = board.make(amove.0, amove.1);
+        let ep = board.ep;
         let result = board.make(amove.0, amove.1);
         match result {
             None => {
                 // Illegal move, already unmade
+                board.ep = ep;
             },
             Some(captured_piece) => {
                 if depth > 1 {
@@ -19,6 +21,7 @@ fn perft(board : &mut board::ChessBoard, perft_count :&mut u64, depth : u16) {
                     // print!("{}\n", board);
                 }
                 board.unmake(amove.0, amove.1, captured_piece);
+                board.ep = ep;
             }
         }
     }

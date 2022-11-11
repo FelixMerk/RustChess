@@ -9,12 +9,19 @@ fn main() {
     board3.from_fen(starting_position);
     let moves = board3.get_all_moves();
     println!("{}", board3);
-    println!("{:?}", moves);
-    for amove in &moves {
-        println!("{}", board::square_to_alphanumeric(amove.0));
-        println!("{}\n", board::square_to_alphanumeric((amove.1.0,amove.1.1)));
-    }
+    print_moves(&moves);
     println!("{:?}", moves.len());
+
+    board3.make((3, 3), (2, 4, 0));
+    println!("{}", board3);
+    board3.unmake((3, 3), (2, 4, 0), 0);
+    println!("{}", board3);
+}
+
+fn print_moves(moves :& Vec<((usize, usize), (usize, usize, u8))>) {
+    for amove in moves {
+        println!("{}, {}", board::square_to_alphanumeric(amove.0), board::square_to_alphanumeric((amove.1.0,amove.1.1)));
+    }
 }
 
 fn _practice_moves2() {
