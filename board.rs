@@ -1,20 +1,23 @@
 use std::fmt;
 
 use std::convert::TryFrom;
+use std::convert::TryInto;
 
 pub struct ChessBoard {
     pub board: [[u8; 8]; 8],
     opponent: u8,
-    protagonist: u8,
+    pub protagonist: u8,
     white_kingside_castle: bool,
     white_queenside_castle: bool,
     black_kingside_castle: bool,
     black_queenside_castle: bool,
     ep: Option<(usize, usize)>,
+    pub white_king_pos: (usize, usize),
+    pub black_king_pos: (usize, usize),
 }
 
 pub fn build_board(board: [[u8; 8]; 8]) -> ChessBoard {
-    ChessBoard{ board: board , opponent: BLACK , protagonist: WHITE, white_kingside_castle: true, white_queenside_castle: true, black_kingside_castle: true, black_queenside_castle: true, ep: None}
+    ChessBoard{ board: board , opponent: BLACK , protagonist: WHITE, white_kingside_castle: true, white_queenside_castle: true, black_kingside_castle: true, black_queenside_castle: true, ep: None, white_king_pos: (7,4), black_king_pos: (0,4)}
 }
 
 
@@ -35,6 +38,12 @@ impl fmt::Display for ChessBoard {
 impl ChessBoard {
     pub fn from_fen(&mut self, fen : &str)  {
         self.board = [[0u8; 8]; 8];
+
+        self.white_kingside_castle = false;
+        self.white_queenside_castle = false;
+        self.black_kingside_castle = false;
+        self.black_queenside_castle = false;
+
         let mut row = 0;
         let mut col = 0;
         let mut space_count = 0;
@@ -68,6 +77,11 @@ impl ChessBoard {
                     }
                     'k'=> {
                         self.board[row][col] = KING | color;
+                        if color == WHITE {
+                            self.white_king_pos = (row, col);
+                        } else {
+                            self.black_king_pos = (row, col);
+                        }
                         col += 1;
                     }
                     'q'=> {
@@ -82,11 +96,29 @@ impl ChessBoard {
             } else {
                 if c == ' ' {
                     space_count += 1;
-                } else if space_count == 1 {
+                } else if space_count == 1 { // To move
                     if c == 'w' {
                         self.protagonist = WHITE;
                     } else {
                         self.protagonist = BLACK;
+                    }
+                } else if space_count == 2 { // Castling Rights
+                    if c == 'K' {
+                        self.white_kingside_castle = true;
+                    } else if c == 'Q' {
+                        self.white_queenside_castle = true;
+                    } else if c == 'k' {
+                        self.black_kingside_castle = true;
+                    } else if c == 'q' {
+                        self.black_queenside_castle = true;
+                    }
+                } else if space_count == 3 { // EP information
+                    if c == '-' {
+                        self.ep = None
+                    } else if c.is_ascii_digit() {
+                        self.ep = Some(((8-c.to_digit(10).unwrap()).try_into().unwrap(), self.ep.unwrap().1));
+                    } else {
+                        self.ep = Some((2, letter_to_col(c)));
                     }
                 }
             }
@@ -382,10 +414,16 @@ impl ChessBoard {
         pawn_move_vec
     }
 
-    pub fn make(&mut self, source: (usize, usize), dest: (usize, usize, u8)) -> u8 {
+    pub fn make(&mut self, source: (usize, usize), dest: (usize, usize, u8)) -> Option<u8> {
+        // None if illegal move
         let captured_piece = self.board[dest.0][dest.1];
 
         if clear_piece_color(self.board[source.0][source.1]) == KING {
+            if self.protagonist == WHITE {
+                self.white_king_pos = (dest.0, dest.1);
+            } else {
+                self.black_king_pos = (dest.0, dest.1);
+            }
             if source.1.abs_diff(dest.1) > 1 { // Castling
                 if source.1 > dest.1 { // Queenside
                     self.board[source.0][dest.1 + 1] = self.board[source.0][0];
@@ -403,10 +441,21 @@ impl ChessBoard {
         }
         self.board[source.0][source.1] = 0b0000;
 
+        let mut illegal = false;
+        if ((self.protagonist == 0b1000) && self.in_check(self.white_king_pos)) || ((self.protagonist == 0b0000) && self.in_check(self.black_king_pos)) {
+            // King illegally left in check
+            illegal = true;
+        }
+
         let temp = self.protagonist;
         self.protagonist = self.opponent;
         self.opponent = temp;
-        captured_piece
+        if illegal {
+            self.unmake(source, dest, captured_piece);
+            return None;
+        } else {
+            return Some(captured_piece);
+        }
     }
 
     pub fn unmake(&mut self, source: (usize, usize), dest: (usize, usize, u8), captured_piece: u8) {
@@ -415,6 +464,12 @@ impl ChessBoard {
         self.opponent = temp;
 
         if clear_piece_color(self.board[dest.0][dest.1]) == KING {
+            if self.protagonist == WHITE {
+                self.white_king_pos = source;
+            } else {
+                self.black_king_pos = source;
+            }
+
             if source.1.abs_diff(dest.1) > 1 { // UnCastling
                 if source.1 > dest.1 { // Queenside
                     self.board[source.0][0] = self.board[source.0][dest.1 + 1];
@@ -500,3 +555,41 @@ fn create_promo_moves(source: (usize, usize), dest: (usize, usize)) -> Vec<((usi
     move_vec
 }
 
+fn letter_to_col(letter : char) -> usize {
+    match letter {
+        'a' => 0,
+        'b' => 1,
+        'c' => 2,
+        'd' => 3,
+        'e' => 4,
+        'f' => 5,
+        'g' => 6,
+        'h' => 7,
+        _ => {
+            assert!(false, "Bad Letter");
+            0
+        },
+    }
+}
+
+pub fn square_to_alphanumeric(square: (usize, usize)) ->  String {
+    let num = 8 - square.0;
+    let letter = match square.1 {
+        0 => "a",
+        1 => "b",
+        2 => "c",
+        3 => "d",
+        4 => "e",
+        5 => "f",
+        6 => "g",
+        7 => "h",
+        _ => {
+            assert!(false, "Bad number");
+            "z"
+        }
+    };
+    let num_as_string = num.to_string();
+    // letter.push_str(&num_as_string);
+    let together = format!("{}{}", letter, num_as_string);
+    together
+}
