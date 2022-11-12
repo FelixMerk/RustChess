@@ -23,7 +23,7 @@ fn negamax(board : &mut board::ChessBoard, depth : u16) -> i32 {
                 // Illegal move, already unmade
             },
             Some(captured_piece) => {
-                print_move(&amove);
+                // print_move(&amove);
                 //println!("{}", board.in_check(board.black_king_pos));
                 //println!("{}", board);
                 //println!("{:?}", board.black_king_pos);
@@ -31,7 +31,7 @@ fn negamax(board : &mut board::ChessBoard, depth : u16) -> i32 {
                 if depth > 1 {
                     score = -1 * negamax(board, depth-1);
                 } else {
-                    score = eval::eval(board);
+                    score = -1 * eval::eval(board);
                 }
                 if score > max {
                     // println!("{}", score);
@@ -53,14 +53,12 @@ fn negamax(board : &mut board::ChessBoard, depth : u16) -> i32 {
             if board.in_check(board.white_king_pos) {
                 max = -100000;
             } else { //stalemate
-                println!("STALEMATE");
                 max = 0;
             }
         } else {
             if board.in_check(board.black_king_pos) {
                 max = -100000;
             } else { //stalemate
-                println!("STALEMATE");
                 max = 0;
             }
         }
@@ -82,15 +80,36 @@ fn main() {
     print!("{}\n", score);
     */
 
+    let mate_in_1 = "r3k2r/pp3p2/2n1p3/2pp1b2/6nq/1P1PPN2/PBP2PB1/R2QR1K1 b kq - 1 15";
+    board.from_fen(mate_in_1);
+    let score = negamax(&mut board, 2);
+    println!("{}", score);
+
+    /*
+    let mate_in_3 = "6k1/pp3p1p/2p3p1/3p1P2/3P1KPP/4Q3/P1q5/8 w - - 0 26";
+    board.from_fen(mate_in_3);
+    let score = negamax(&mut board, 7);
+    println!("{}", score);
+    */
+
     /*
     let pos_force_stalemate = "4r2k/5Q2/8/8/8/8/2RR2P1/2RKRBN1 b - - 0 1";
     board.from_fen(pos_force_stalemate);
     let score = negamax(&mut board, 3);
     println!("{}", score);
     */
+    
+    /*
+    let stale = "7k/5Q2/8/8/8/8/2RR2P1/2RKrBN1 w - - 0 2";
+    board.from_fen(stale);
+    let score = negamax(&mut board, 2);
+    println!("{}", score);
+    */
 
+    /*
     let stale = "7k/5Q2/8/8/8/8/2RR2P1/2R1KBN1 b - - 0 2";
     board.from_fen(stale);
     let score = negamax(&mut board, 1);
     println!("{}", score);
+    */
 }
