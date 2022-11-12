@@ -99,8 +99,10 @@ impl ChessBoard {
                 } else if space_count == 1 { // To move
                     if c == 'w' {
                         self.protagonist = WHITE;
+                        self.opponent = BLACK;
                     } else {
                         self.protagonist = BLACK;
+                        self.opponent = WHITE;
                     }
                 } else if space_count == 2 { // Castling Rights
                     if c == 'K' {
@@ -555,14 +557,14 @@ impl ChessBoard {
 }
 
 
-const WHITE : u8 = 0b1000;
-const BLACK : u8 = 0b0000;
-const KING : u8 = 0b0001;
-const QUEEN : u8 = 0b0010;
-const PAWN : u8 = 0b0011;
-const ROOK : u8 = 0b0100;
-const KNIGHT : u8 = 0b0101;
-const BISHOP : u8 = 0b0111;
+pub const WHITE : u8 = 0b1000;
+pub const BLACK : u8 = 0b0000;
+pub const KING : u8 = 0b0001;
+pub const QUEEN : u8 = 0b0010;
+pub const PAWN : u8 = 0b0011;
+pub const ROOK : u8 = 0b0100;
+pub const KNIGHT : u8 = 0b0101;
+pub  const BISHOP : u8 = 0b0111;
 
 pub fn piece_to_char(piece : u8) -> char {
     let piece_char : char = match clear_piece_color(piece) {
